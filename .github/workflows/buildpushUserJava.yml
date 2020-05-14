@@ -9,7 +9,7 @@ on:
 jobs:
 
   publish:
-    name: Docker Build User Java
+    name: Docker Build User Java Service
 
     runs-on: ubuntu-latest
 
