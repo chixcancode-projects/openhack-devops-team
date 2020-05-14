@@ -9,7 +9,7 @@ on:
 jobs:
 
   publish:
-    name: Docker Build User
+    name: Docker Build User Profile
 
     runs-on: ubuntu-latest
 
@@ -22,4 +22,30 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.githubtoken }}
         registry: docker.pkg.github.com
+        tags: "latest, ${{ github.run_number }}" 
         workdir: ./apis/userprofile
+
+  deploy:
+    needs: [publish]
+    name: User Profile App Service Deploy
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: 'Login via Docker to GH'
+        uses: azure/docker-login@v1
+        with:
+          login-server: docker.pkg.github.com
+          username: ${{ github.actor }}
+          password: ${{ secrets.githubtoken }}
+    
+      - name: 'Push to Azure App Service'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'openhack4t18p479userprofile'
+          images: ${{ env.CONTAINER_REGISTRY }}/chixcancode-projects/openhack-devops-team/userprofile:latest

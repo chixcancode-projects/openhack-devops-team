@@ -5,7 +5,10 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  
+
+env:
+  CONTAINER_REGISTRY: docker.pkg.github.com # Container Registry name
+
 jobs:
 
   publish:
@@ -22,4 +25,30 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.githubtoken }}
         registry: docker.pkg.github.com
+        tags: "latest, ${{ github.run_number }}" 
         workdir: ./apis/poi/web
+
+  deploy:
+    needs: [publish]
+    name: POI App Service Deploy
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: 'Login via Docker to GH'
+        uses: azure/docker-login@v1
+        with:
+          login-server: docker.pkg.github.com
+          username: ${{ github.actor }}
+          password: ${{ secrets.githubtoken }}
+    
+      - name: 'Push to Azure App Service'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'openhack4t18p479poi'
+          images: ${{ env.CONTAINER_REGISTRY }}/chixcancode-projects/openhack-devops-team/poi:latest
